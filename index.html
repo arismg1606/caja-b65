@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja B-65 | Aniversario</title>
+    
+    <!-- React y ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel para traducir JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Animaciones personalizadas */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-orange-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- ICONOS INCRUSTADOS (Para evitar errores de carga externa) ---
+        const Icons = {
+            Check: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"/></svg>,
+            X: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            CircleDollarSign: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>,
+            Copy: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>,
+            Star: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+            Users: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+            Coffee: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>,
+            Sparkles: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>,
+            Flame: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.1.243-2.143.7-3"/></svg>,
+            Save: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>,
+            Upload: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+            Siren: (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M7 12a5 5 0 0 1 5-5v0a5 5 0 0 1 5 5v6H7v-6Z"/><path d="M5 20a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2H5v-2Z"/><path d="M21 12h1"/><path d="M18.5 4.5 18 5"/><path d="M2 12h1"/><path d="M12 2v1"/><path d="m4.929 4.929.707.707"/><path d="M12 12v6"/></svg>
+        };
+
+        const { Check, X, CircleDollarSign, Copy, Star, Users, Coffee, Sparkles, Flame, Save, Upload, Siren } = Icons;
+
+        const ControlPagos = () => {
+            // Datos iniciales
+            const initialData = {
+                postulantes: [
+                    { id: 'p1', name: 'Martínez', paidLavado: false, paidActividad: false, note: '' },
+                    { id: 'p2', name: 'Reyes', paidLavado: false, paidActividad: false, note: 'Debe S/ 0.80 (Lavado)' },
+                    { id: 'p3', name: 'Taboada', paidLavado: false, paidActividad: false, note: '🎈 Encargado Globos' },
+                    { id: 'p4', name: 'Ponte', paidLavado: false, paidActividad: false, note: '' },
+                    { id: 'p5', name: 'Carlos', paidLavado: false, paidActividad: false, note: 'Debe S/ 0.80 (Lavado)' },
+                    { id: 'p6', name: 'Córdova', paidLavado: false, paidActividad: false, note: '🥟 Encargado Tequeños' },
+                    { id: 'p7', name: 'Lazo', paidLavado: false, paidActividad: false, note: '' },
+                    { id: 'p8', name: 'Soto', paidLavado: false, paidActividad: false, note: '' },
+                    { id: 'p9', name: 'Espinoza', paidLavado: false, paidActividad: false, note: 'Debe S/ 0.80 (Lavado)' },
+                    { id: 'p10', name: 'Encarnación', paidLavado: false, paidActividad: false, note: '' },
+                    { id: 'p11', name: 'Velázquez', paidLavado: false, paidActividad: false, note: '' },
+                ],
+                aspCia: [
+                    { id: 'ac1', name: 'Manrique', paidLavado: false },
+                    { id: 'ac2', name: 'Rosales', paidLavado: false },
+                    { id: 'ac3', name: 'Pavia', paidLavado: false },
+                    { id: 'ac4', name: 'Capcha', paidLavado: false },
+                    { id: 'ac5', name: 'Villanueva', paidLavado: false },
+                    { id: 'ac6', name: 'Yujra', paidLavado: false },
+                    { id: 'ac7', name: 'Polanco', paidLavado: false },
+                    { id: 'ac8', name: 'Cieza', paidLavado: false },
+                    { id: 'ac9', name: 'Asp. Cía 9 (Pendiente)', paidLavado: false },
+                    { id: 'ac10', name: 'Asp. Cía 10 (Pendiente)', paidLavado: false },
+                ],
+                aspEscuela: [
+                    { id: 'ae1', name: 'Bardales', paidLavado: false },
+                    { id: 'ae2', name: 'Flores', paidLavado: false },
+                    { id: 'ae3', name: 'Díaz', paidLavado: false },
+                ],
+                oficiales: [
+                    { id: 'of1', name: 'Stte. Quispe', paidLavado: false }
+                ]
+            };
+
+            const [data, setData] = useState(() => {
+                try {
+                    const savedData = localStorage.getItem('control_pagos_b65_web');
+                    return savedData ? JSON.parse(savedData) : initialData;
+                } catch (e) {
+                    return initialData;
+                }
+            });
+
+            const [showImport, setShowImport] = useState(false);
+            const [importString, setImportString] = useState('');
+
+            useEffect(() => {
+                localStorage.setItem('control_pagos_b65_web', JSON.stringify(data));
+            }, [data]);
+
+            const toggleLavado = (group, id) => {
+                setData(prev => ({
+                    ...prev,
+                    [group]: prev[group].map(p => p.id === id ? { ...p, paidLavado: !p.paidLavado } : p)
+                }));
+            };
+
+            const toggleActividad = (id) => {
+                setData(prev => ({
+                    ...prev,
+                    postulantes: prev.postulantes.map(p => p.id === id ? { ...p, paidActividad: !p.paidActividad } : p)
+                }));
+            };
+
+            const stats = useMemo(() => {
+                let recaudadoLavado = 0;
+                let recaudadoActividad = 0;
+                let pendientesLavado = 0;
+                
+                data.postulantes.forEach(p => {
+                    if (p.paidLavado) recaudadoLavado += 4;
+                    else pendientesLavado++;
+                    if (p.paidActividad) recaudadoActividad += 30;
+                });
+
+                [...data.aspCia, ...data.aspEscuela, ...data.oficiales].forEach(p => {
+                    if (p.paidLavado) recaudadoLavado += 4;
+                    else pendientesLavado++;
+                });
+
+                return { 
+                    recaudadoLavado, 
+                    recaudadoActividad, 
+                    total: recaudadoLavado + recaudadoActividad,
+                    pendientesLavado
+                };
+            }, [data]);
+
+            const copyToClipboard = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                } catch (err) {
+                    console.error('Error', err);
+                }
+                document.body.removeChild(textArea);
+            };
+
+            const copyReport = () => {
+                const lines = [];
+                lines.push(`🚒 *CONTROL DE CAJA B-65* 🚒`);
+                lines.push(`💰 Total Recaudado: S/ ${stats.total.toFixed(2)}`);
+                lines.push(`-------------------------`);
+                
+                const getIcon = (paid) => paid ? '✅' : '❌';
+                
+                lines.push(`*🐣 POSTULANTES (S/ 30 + S/ 4)*`);
+                data.postulantes.forEach(p => {
+                    lines.push(`${p.name}: Lavado ${getIcon(p.paidLavado)} | Actividad ${getIcon(p.paidActividad)}`);
+                });
+
+                lines.push(`\n*👨‍🚒 COMPAÑÍA Y ESCUELA (S/ 4)*`);
+                const others = [...data.aspCia, ...data.aspEscuela, ...data.oficiales];
+                const paidOthers = others.filter(p => p.paidLavado).length;
+                lines.push(`Pagaron: ${paidOthers}/${others.length}`);
+                
+                copyToClipboard(lines.join('\n'));
+                alert("📋 Reporte copiado al portapapeles");
+            };
+
+            const exportData = () => {
+                const jsonString = JSON.stringify(data);
+                copyToClipboard(jsonString);
+                alert("📋 ¡Código de respaldo copiado! Guárdalo en un chat de WhatsApp.");
+            };
+
+            const handleImport = () => {
+                try {
+                    if (!importString) return;
+                    const parsed = JSON.parse(importString);
+                    if (parsed.postulantes && parsed.aspCia) {
+                        setData(parsed);
+                        setShowImport(false);
+                        setImportString('');
+                        alert("✅ ¡Datos cargados correctamente!");
+                    } else {
+                        alert("❌ El código no es válido.");
+                    }
+                } catch (e) {
+                    alert("❌ Error al leer el código.");
+                }
+            };
+
+            // Componente de fila simple
+            const SimpleRow = ({ person, toggle }) => (
+                <div 
+                    onClick={toggle}
+                    className="p-3 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition select-none group"
+                >
+                    <span className="text-sm font-bold text-slate-600 group-hover:text-red-500 transition">{person.name}</span>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                        person.paidLavado 
+                            ? 'bg-green-100 border-green-300 text-green-600 scale-110 shadow-sm' 
+                            : 'bg-white border-slate-200 text-slate-300'
+                    }`}>
+                        {person.paidLavado && <Check size={16} strokeWidth={3} />}
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-orange-50 text-slate-700 p-4 font-sans selection:bg-orange-200 pb-20">
+                    <div className="max-w-3xl mx-auto space-y-6">
+                        
+                        {/* Header Bomberín */}
+                        <div className="bg-white rounded-3xl p-6 shadow-xl shadow-orange-100 border-2 border-orange-100 relative overflow-hidden">
+                            <div className="absolute -top-6 -right-6 bg-red-100 w-32 h-32 rounded-full opacity-60 blur-2xl"></div>
+                            <div className="absolute -bottom-6 -left-6 bg-yellow-100 w-32 h-32 rounded-full opacity-60 blur-2xl"></div>
+                            
+                            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                                <div>
+                                    <h1 className="text-3xl font-black flex items-center gap-2 text-red-600">
+                                        <CircleDollarSign className="w-10 h-10 text-yellow-500 fill-yellow-100 animate-bounce" />
+                                        Caja B-65
+                                    </h1>
+                                    <p className="text-orange-500 font-bold ml-1 flex items-center gap-1">
+                                        <Flame size={16} className="fill-orange-500" /> Aniversario & Chocolatada
+                                    </p>
+                                </div>
+                                
+                                <div className="flex gap-2 w-full md:w-auto">
+                                <button 
+                                    onClick={copyReport}
+                                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md transform active:scale-95"
+                                >
+                                    <Copy size={18} /> Copiar Reporte
+                                </button>
+                                </div>
+                            </div>
+
+                            {/* Botones de Respaldo */}
+                            <div className="relative z-10 flex justify-end gap-2 mb-6 text-xs">
+                                <button onClick={exportData} className="text-slate-400 hover:text-red-500 flex items-center gap-1 underline decoration-dotted">
+                                    <Save size={14} /> Guardar Copia
+                                </button>
+                                <button onClick={() => setShowImport(!showImport)} className="text-slate-400 hover:text-red-500 flex items-center gap-1 underline decoration-dotted">
+                                    <Upload size={14} /> Cargar Copia
+                                </button>
+                            </div>
+
+                            {showImport && (
+                                <div className="relative z-10 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-in">
+                                    <p className="text-xs text-slate-500 mb-2 font-medium">Pega aquí el código que guardaste anteriormente:</p>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            value={importString}
+                                            onChange={(e) => setImportString(e.target.value)}
+                                            className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono"
+                                            placeholder='{"postulantes":...}'
+                                        />
+                                        <button onClick={handleImport} className="bg-slate-800 text-white px-3 rounded-lg text-xs font-bold">Cargar</button>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-center">
+                                    <p className="text-red-400 text-xs uppercase font-extrabold tracking-wider">Total Recaudado</p>
+                                    <p className="text-3xl font-black text-red-600">S/ {stats.total.toFixed(2)}</p>
+                                </div>
+                                <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-center">
+                                    <p className="text-orange-400 text-xs uppercase font-extrabold tracking-wider">Lavado (S/ 4)</p>
+                                    <p className="text-xl font-bold text-orange-600">S/ {stats.recaudadoLavado.toFixed(2)}</p>
+                                    <p className="text-xs text-orange-400 mt-1 font-medium">{stats.pendientesLavado} faltan</p>
+                                </div>
+                                <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100 text-center">
+                                    <p className="text-yellow-600 text-xs uppercase font-extrabold tracking-wider">Actividad (S/ 30)</p>
+                                    <p className="text-xl font-bold text-yellow-600">S/ {stats.recaudadoActividad.toFixed(2)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Postulantes Section */}
+                        <div className="bg-white rounded-3xl shadow-lg shadow-slate-100 border border-slate-100 overflow-hidden">
+                            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-5 flex justify-between items-center border-b border-red-100">
+                                <h2 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                    <Sparkles className="text-yellow-500 fill-yellow-500" size={20} />
+                                    Postulantes
+                                </h2>
+                                <span className="text-xs font-bold bg-white text-red-500 px-3 py-1 rounded-full shadow-sm border border-red-100">
+                                    S/ 4 + S/ 30
+                                </span>
+                            </div>
+                            
+                            <div className="divide-y divide-slate-50">
+                                {data.postulantes.map((p) => (
+                                    <div key={p.id} className="p-4 hover:bg-orange-50/50 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
+                                        <div className="flex-1">
+                                            <div className="font-bold text-slate-700 text-lg group-hover:text-red-600 transition">{p.name}</div>
+                                            {p.note && (
+                                                <div className="text-xs font-bold text-orange-500 bg-orange-50 inline-flex items-center gap-1 px-2 py-1 rounded-md mt-1 border border-orange-100">
+                                                    <Siren size={12} className="animate-pulse" /> {p.note}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => toggleLavado('postulantes', p.id)}
+                                                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all flex items-center justify-center gap-2 w-32 shadow-sm
+                                                    ${p.paidLavado 
+                                                        ? 'bg-green-100 border-green-300 text-green-700' 
+                                                        : 'bg-white border-slate-100 text-slate-300 hover:border-orange-200'}`}
+                                            >
+                                                {p.paidLavado ? <Check size={18} strokeWidth={3} /> : <div className="w-4 h-4 rounded-full border-2 border-slate-200"></div>}
+                                                Lavado
+                                            </button>
+                                            
+                                            <button
+                                                onClick={() => toggleActividad(p.id)}
+                                                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all flex items-center justify-center gap-2 w-32 shadow-sm
+                                                    ${p.paidActividad 
+                                                        ? 'bg-yellow-100 border-yellow-300 text-yellow-700' 
+                                                        : 'bg-white border-slate-100 text-slate-300 hover:border-orange-200'}`}
+                                            >
+                                                {p.paidActividad ? <Check size={18} strokeWidth={3} /> : <div className="w-4 h-4 rounded-full border-2 border-slate-200"></div>}
+                                                S/ 30.00
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Other Groups Grid */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {/* Asp Cia */}
+                            <div className="bg-white rounded-3xl shadow-lg shadow-slate-100 border border-slate-100 overflow-hidden">
+                                <div className="bg-slate-50 p-4 border-b border-slate-100">
+                                    <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                        <Users size={18} className="text-red-500" /> Aspirantes Cía
+                                    </h3>
+                                </div>
+                                <div className="divide-y divide-slate-50">
+                                    {data.aspCia.map(p => (
+                                        <SimpleRow key={p.id} person={p} toggle={() => toggleLavado('aspCia', p.id)} />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                {/* Asp Escuela */}
+                                <div className="bg-white rounded-3xl shadow-lg shadow-slate-100 border border-slate-100 overflow-hidden">
+                                    <div className="bg-slate-50 p-4 border-b border-slate-100">
+                                        <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                            <Coffee size={18} className="text-orange-500" /> Aspirantes Escuela
+                                        </h3>
+                                    </div>
+                                    <div className="divide-y divide-slate-50">
+                                        {data.aspEscuela.map(p => (
+                                            <SimpleRow key={p.id} person={p} toggle={() => toggleLavado('aspEscuela', p.id)} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Oficiales */}
+                                <div className="bg-white rounded-3xl shadow-lg shadow-slate-100 border border-slate-100 overflow-hidden">
+                                    <div className="bg-slate-50 p-4 border-b border-slate-100">
+                                        <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                            <Star size={18} className="text-yellow-500 fill-yellow-500" /> Oficiales
+                                        </h3>
+                                    </div>
+                                    <div className="divide-y divide-slate-50">
+                                        {data.oficiales.map(p => (
+                                            <SimpleRow key={p.id} person={p} toggle={() => toggleLavado('oficiales', p.id)} />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ControlPagos />);
+    </script>
+</body>
+</html>
